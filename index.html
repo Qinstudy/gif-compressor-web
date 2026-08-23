@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIF 压缩工具 · 微信 10MB 专版</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8eb;
+    --muted: #8a919e;
+    --accent: #4f8cff;
+    --accent-hover: #3d7bef;
+    --wechat: #07c160;
+    --danger: #ff5c5c;
+    --ok: #2ecc71;
+    --warn: #f5a623;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  header { text-align: center; margin-bottom: 32px; }
+  header h1 { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+  header h1 .wx { color: var(--wechat); }
+  header p { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  header p .lock { color: var(--ok); }
+
+  section.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- 上传区 ---------- */
+  #dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--panel2);
+    padding: 56px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .15s;
+  }
+  #dropzone:hover { border-color: var(--accent); }
+  #dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(79, 140, 255, .08);
+    transform: scale(1.005);
+  }
+  #dropzone .icon { font-size: 46px; display: block; margin-bottom: 12px; }
+  #dropzone .main-text { font-size: 17px; font-weight: 600; }
+  #dropzone .sub-text { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  /* ---------- 信息卡 ---------- */
+  .info-flex { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .info-flex img {
+    width: 200px; max-width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background:
+      repeating-conic-gradient(#262b35 0% 25%, #1a1e26 0% 50%) 0 0 / 16px 16px;
+  }
+  .info-table { flex: 1; min-width: 260px; }
+  .info-table .row {
+    display: flex; justify-content: space-between;
+    padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 14px;
+  }
+  .info-table .row:last-child { border-bottom: none; }
+  .info-table .k { color: var(--muted); }
+  .info-table .v { font-weight: 600; word-break: break-all; text-align: right; }
+  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ""; width: 4px; height: 16px; background: var(--accent); border-radius: 2px; }
+
+  /* ---------- 按钮 ---------- */
+  .btn {
+    border: none; border-radius: 10px; cursor: pointer;
+    font-size: 15px; font-weight: 600; padding: 13px 26px;
+    transition: background .2s, transform .1s, opacity .2s;
+    color: #fff; font-family: inherit;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--wechat); width: 100%; font-size: 16px; }
+  .btn-primary:hover:not(:disabled) { background: #06ad56; }
+  .btn-accent { background: var(--accent); width: 100%; }
+  .btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 8px 18px; font-size: 13px; width: auto;
+  }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+  .btn-download {
+    background: var(--accent); display: inline-block; text-decoration: none;
+    text-align: center; width: 100%;
+  }
+  .btn-download:hover { background: var(--accent-hover); }
+
+  /* ---------- 参数区 ---------- */
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--muted); font-size: 13px; margin: 22px 0 16px;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .param-grid { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .param-item { flex: 1; min-width: 150px; }
+  .param-item label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .param-item input, .param-item select {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 14px;
+    font-family: inherit; outline: none; transition: border-color .2s;
+  }
+  .param-item input:focus, .param-item select:focus { border-color: var(--accent); }
+
+  /* ---------- 进度 ---------- */
+  .progress-wrap { margin-top: 4px; }
+  .progress-stage { font-size: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .progress-stage .pct { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .progress-bar {
+    height: 10px; background: var(--panel2); border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-bar .fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), #6fb3ff);
+    background-size: 200% 100%;
+    animation: stripe 1.2s linear infinite;
+    transition: width .15s ease;
+    border-radius: 6px;
+  }
+  @keyframes stripe { from { background-position: 0 0; } to { background-position: 40px 0; } }
+  #cancel-row { margin-top: 14px; text-align: center; }
+
+  /* ---------- 结果 ---------- */
+  .metrics {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    flex-wrap: wrap; margin-bottom: 8px;
+  }
+  .metric { text-align: center; }
+  .metric .num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .metric .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .metric .num.before { color: var(--muted); }
+  .metric .num.after.smaller { color: var(--ok); }
+  .metric .num.after.bigger { color: var(--danger); }
+  .arrow { color: var(--muted); font-size: 22px; }
+  .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 12px 0 4px; }
+  .badge {
+    font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .badge.ok { color: var(--ok); border-color: var(--ok); background: rgba(46,204,113,.1); }
+  .badge.warn { color: var(--warn); border-color: var(--warn); background: rgba(245,166,35,.1); }
+  .badge.danger { color: var(--danger); border-color: var(--danger); background: rgba(255,92,92,.1); }
+  .badge.info { color: var(--accent); border-color: var(--accent); background: rgba(79,140,255,.1); }
+  .level-desc { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .preview-flex { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+  .preview-box { flex: 1; min-width: 240px; text-align: center; }
+  .preview-box .pv-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .preview-box img {
+    max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--border);
+    background:
+      repeating-conic-gradient(#262b35 0% 25%, #1a1e26 0% 50%) 0 0 / 16px 16px;
+  }
+
+  /* ---------- toast ---------- */
+  #toast-wrap {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 999; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 22px; border-radius: 999px; font-size: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.45);
+    animation: toast-in .25s ease;
+    max-width: 80vw;
+  }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+  .toast.success { border-color: var(--ok); color: var(--ok); }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 36px; }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="toast-wrap"></div>
+<div class="container">
+
+  <header>
+    <h1>GIF 压缩工具 · <span class="wx">微信 10MB 专版</span></h1>
+    <p><span class="lock">🔒 纯前端本地处理</span>，文件不离开浏览器，无需上传服务器</p>
+  </header>
+
+  <!-- 上传区 -->
+  <section class="card" id="upload-section">
+    <div id="dropzone">
+      <span class="icon">🎞️</span>
+      <div class="main-text">拖拽 GIF 到此处，或点击选择文件</div>
+      <div class="sub-text">仅支持 .gif 格式 · 压缩全程在本地浏览器完成</div>
+    </div>
+    <input type="file" id="file-input" accept="image/gif,.gif" class="hidden">
+  </section>
+
+  <!-- 原图信息 -->
+  <section class="card hidden" id="info-section">
+    <div class="card-title">原始文件</div>
+    <div class="info-flex">
+      <img id="orig-preview" alt="原 GIF 预览">
+      <div class="info-table">
+        <div class="row"><span class="k">文件名</span><span class="v" id="info-name">-</span></div>
+        <div class="row"><span class="k">文件大小</span><span class="v" id="info-size">-</span></div>
+        <div class="row"><span class="k">尺寸</span><span class="v" id="info-dims">-</span></div>
+        <div class="row"><span class="k">帧数</span><span class="v" id="info-frames">-</span></div>
+        <div class="row"><span class="k">总时长</span><span class="v" id="info-duration">-</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 压缩参数 -->
+  <section class="card hidden" id="params-section">
+    <div class="card-title">压缩</div>
+    <button class="btn btn-primary" id="btn-preset">⚡ 一键微信 10MB 预设</button>
+    <div class="divider">手动微调</div>
+    <div class="param-grid">
+      <div class="param-item">
+        <label>目标宽度（px，等比缩放）</label>
+        <input type="number" id="param-width" min="120" step="10" placeholder="原图宽度">
+      </div>
+      <div class="param-item">
+        <label>颜色数（越少越小）</label>
+        <select id="param-colors">
+          <option value="256" selected>256 色（最佳画质）</option>
+          <option value="128">128 色</option>
+          <option value="64">64 色</option>
+          <option value="32">32 色（最小体积）</option>
+        </select>
+      </div>
+      <div class="param-item">
+        <label>帧间隔（1 = 不跳帧）</label>
+        <select id="param-skip">
+          <option value="1" selected>1 · 保留全部帧</option>
+          <option value="2">2 · 每 2 帧取 1</option>
+          <option value="3">3 · 每 3 帧取 1</option>
+          <option value="4">4 · 每 4 帧取 1</option>
+          <option value="5">5 · 每 5 帧取 1</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-accent" id="btn-compress">开始压缩 GIF</button>
+  </section>
+
+  <!-- 进度 -->
+  <section class="card hidden" id="progress-section">
+    <div class="card-title">正在压缩</div>
+    <div class="progress-wrap">
+      <div class="progress-stage">
+        <span id="progress-text">准备中…</span>
+        <span class="pct" id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+      <div id="cancel-row"><button class="btn btn-ghost" id="btn-cancel">取消</button></div>
+    </div>
+  </section>
+
+  <!-- 结果 -->
+  <section class="card hidden" id="result-section">
+    <div class="card-title">压缩结果</div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="num before" id="m-before">-</div>
+        <div class="lbl">压缩前</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="metric">
+        <div class="num after smaller" id="m-after">-</div>
+        <div class="lbl">压缩后</div>
+      </div>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="level-desc" id="level-desc"></div>
+    <div class="preview-flex">
+      <div class="preview-box">
+        <div class="pv-title">原图</div>
+        <img id="pv-before" alt="原图预览">
+      </div>
+      <div class="preview-box">
+        <div class="pv-title">压缩后</div>
+        <img id="pv-after" alt="压缩后预览">
+      </div>
+    </div>
+    <a class="btn btn-download" id="btn-download" download>⬇ 下载压缩后的 GIF</a>
+  </section>
+
+  <footer>
+    纯前端实现 · 基于 <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> 与
+    <a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> · 适配微信公众号 ≤10MB 上传要求
+  </footer>
+</div>
+
+<!-- ============================================================
+     压缩管线（纯函数，不依赖 DOM / import，库以参数注入）
+     同一份文本：主线程 fallback 用 new Function 执行；
+     Web Worker 内与下方 glue 拼接后作为 module worker 运行。
+     注意：本标签内禁止出现 </script> 字样。
+============================================================ -->
+<script id="pipeline-source" type="text/pipeline">
+function blitPatch(canvas, canvasW, patch, dims) {
+  var left = dims.left, top = dims.top, width = dims.width, height = dims.height;
+  for (var y = 0; y < height; y++) {
+    var srcRow = y * width * 4;
+    var dstRow = ((top + y) * canvasW + left) * 4;
+    for (var x = 0; x < width; x++) {
+      var si = srcRow + x * 4;
+      if (patch[si + 3] === 0) continue; // 透明像素不覆盖（等效 drawImage alpha 合成）
+      var di = dstRow + x * 4;
+      canvas[di] = patch[si];
+      canvas[di + 1] = patch[si + 1];
+      canvas[di + 2] = patch[si + 2];
+      canvas[di + 3] = 255;
+    }
+  }
+}
+
+function applyDisposal(canvas, canvasW, f, prevSnapshot, bg) {
+  if (f.disposalType === 3) {
+    if (prevSnapshot) canvas.set(prevSnapshot);
+    return;
+  }
+  if (f.disposalType === 2) {
+    var left = f.dims.left, top = f.dims.top, width = f.dims.width, height = f.dims.height;
+    for (var y = 0; y < height; y++) {
+      var row = ((top + y) * canvasW + left) * 4;
+      for (var x = 0; x < width; x++) {
+        var di = row + x * 4;
+        canvas[di] = bg[0]; canvas[di + 1] = bg[1]; canvas[di + 2] = bg[2]; canvas[di + 3] = bg[3];
+      }
+    }
+  }
+}
+
+function bilinearResize(src, sw, sh, dw, dh) {
+  var dst = new Uint8ClampedArray(dw * dh * 4);
+  var xRatio = sw / dw, yRatio = sh / dh;
+  for (var y = 0; y < dh; y++) {
+    var fy = (y + 0.5) * yRatio - 0.5;
+    var y0 = Math.floor(fy), wy = fy - y0;
+    var y0c = y0 < 0 ? 0 : (y0 >= sh ? sh - 1 : y0);
+    var y1 = y0 + 1;
+    var y1c = y1 < 0 ? 0 : (y1 >= sh ? sh - 1 : y1);
+    for (var x = 0; x < dw; x++) {
+      var fx = (x + 0.5) * xRatio - 0.5;
+      var x0 = Math.floor(fx), wx = fx - x0;
+      var x0c = x0 < 0 ? 0 : (x0 >= sw ? sw - 1 : x0);
+      var x1 = x0 + 1;
+      var x1c = x1 < 0 ? 0 : (x1 >= sw ? sw - 1 : x1);
+      var i00 = (y0c * sw + x0c) * 4, i10 = (y0c * sw + x1c) * 4;
+      var i01 = (y1c * sw + x0c) * 4, i11 = (y1c * sw + x1c) * 4;
+      var di = (y * dw + x) * 4;
+      for (var c = 0; c < 4; c++) {
+        var topV = src[i00 + c] * (1 - wx) + src[i10 + c] * wx;
+        var botV = src[i01 + c] * (1 - wx) + src[i11 + c] * wx;
+        dst[di + c] = topV * (1 - wy) + botV * wy;
+      }
+    }
+  }
+  return dst;
+}
+
+// level: { maxWidth, colors, frameSkip }
+// libs:  { parseGIF, decompressFrames, GIFEncoder, quantize, applyPalette }
+// onProgress: async (ratio, frameIndex, totalFrames) => void，可抛出异常以取消
+async function compressGIF(buffer, level, libs, onProgress) {
+  var gif = libs.parseGIF(buffer);
+  var frames = libs.decompressFrames(gif, true);
+  if (!frames.length) throw new Error('GIF 中没有有效帧');
+  var W = gif.lsd.width, H = gif.lsd.height;
+
+  var maxWidth = level.maxWidth;
+  if (W * H > 4096 * 4096) maxWidth = Math.min(maxWidth, 1024); // 超大画布内存保护
+  var scale = Math.min(1, maxWidth / W);
+  var outW = Math.max(1, Math.round(W * scale));
+  var outH = Math.max(1, Math.round(H * scale));
+
+  // 透明检测：任一帧带透明索引即全程走 rgba4444 量化
+  var hasAlpha = false;
+  for (var k = 0; k < frames.length; k++) {
+    if (frames[k].transparentIndex != null) { hasAlpha = true; break; }
+  }
+
+  // 背景色：无透明时用全局色表背景色（拿不到则黑色），有透明时用全透明
+  var bg = hasAlpha ? [0, 0, 0, 0] : [0, 0, 0, 255];
+  if (!hasAlpha && gif.gct && gif.lsd && typeof gif.lsd.backgroundColorIndex === 'number') {
+    var bgc = gif.gct[gif.lsd.backgroundColorIndex];
+    if (bgc) bg = [bgc[0], bgc[1], bgc[2], 255];
+  }
+
+  var canvas = new Uint8ClampedArray(W * H * 4);
+  if (bg[3] !== 0) {
+    for (var p = 0; p < W * H; p++) {
+      canvas[p * 4] = bg[0]; canvas[p * 4 + 1] = bg[1]; canvas[p * 4 + 2] = bg[2]; canvas[p * 4 + 3] = 255;
+    }
+  }
+
+  var enc = libs.GIFEncoder();
+  var prevSnapshot = null;
+  var accDelay = 0;
+  var emitted = 0;
+  var frameSkip = Math.max(1, level.frameSkip | 0);
+
+  for (var i = 0; i < frames.length; i++) {
+    var f = frames[i];
+    accDelay += (f.delay && f.delay > 0) ? f.delay : 100;
+
+    if (f.disposalType === 3) prevSnapshot = canvas.slice();
+    blitPatch(canvas, W, f.patch, f.dims);
+
+    var keep = (i % frameSkip === 0) || (i === frames.length - 1);
+    if (keep) {
+      var frameRGBA = (scale === 1) ? canvas.slice() : bilinearResize(canvas, W, H, outW, outH);
+      var palette, index;
+      if (hasAlpha) {
+        palette = libs.quantize(frameRGBA, level.colors, { format: 'rgba4444', oneBitAlpha: true });
+        index = libs.applyPalette(frameRGBA, palette, 'rgba4444');
+      } else {
+        palette = libs.quantize(frameRGBA, level.colors);
+        index = libs.applyPalette(frameRGBA, palette);
+      }
+      var opts = {
+        palette: palette,
+        delay: Math.max(20, Math.round(accDelay)),
+        dispose: -1
+      };
+      if (emitted === 0) opts.repeat = 0; // 无限循环
+      if (hasAlpha) {
+        var tIndex = -1;
+        for (var c2 = 0; c2 < palette.length; c2++) {
+          if (palette[c2].length > 3 && palette[c2][3] === 0) { tIndex = c2; break; }
+        }
+        if (tIndex >= 0) { opts.transparent = true; opts.transparentIndex = tIndex; }
+      }
+      enc.writeFrame(index, outW, outH, opts);
+      accDelay = 0;
+      emitted++;
+    }
+
+    applyDisposal(canvas, W, f, prevSnapshot, bg);
+    if (onProgress) await onProgress((i + 1) / frames.length, i + 1, frames.length);
+  }
+
+  enc.finish();
+  return {
+    bytes: enc.bytes(),
+    meta: { width: outW, height: outH, frames: emitted, colors: level.colors }
+  };
+}
+</script>
+
+<!-- ============================================================
+     Worker glue：与上面的管线文本拼接为完整 module worker 源码
+============================================================ -->
+<script id="worker-glue" type="text/worker-glue">
+var CDN_LIST = [
+  {
+    gifenc: 'https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js',
+    gifuct: 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm'
+  },
+  {
+    gifenc: 'https://esm.sh/gifenc@1.0.3',
+    gifuct: 'https://esm.sh/gifuct-js@2.1.2'
+  }
+];
+
+var libsPromise = (async function () {
+  var lastErr = null;
+  for (var i = 0; i < CDN_LIST.length; i++) {
+    try {
+      var ge = await import(CDN_LIST[i].gifenc);
+      var gu = await import(CDN_LIST[i].gifuct);
+      return {
+        GIFEncoder: ge.GIFEncoder,
+        quantize: ge.quantize,
+        applyPalette: ge.applyPalette,
+        parseGIF: gu.parseGIF,
+        decompressFrames: gu.decompressFrames
+      };
+    } catch (err) { lastErr = err; }
+  }
+  throw lastErr || new Error('engine load failed');
+})();
+
+self.onmessage = async function (e) {
+  var d = e.data;
+  if (d.type === 'ping') {
+    try {
+      await libsPromise;
+      self.postMessage({ type: 'ready' });
+    } catch (err) {
+      self.postMessage({ type: 'error', id: -1, message: '压缩引擎加载失败，请检查网络后刷新页面' });
+    }
+    return;
+  }
+  if (d.type !== 'compress') return;
+  try {
+    var libs = await libsPromise;
+    var result = await compressGIF(d.buffer, d.level, libs, function (ratio, frame, total) {
+      self.postMessage({ type: 'progress', id: d.id, ratio: ratio, frame: frame, total: total });
+    });
+    self.postMessage({ type: 'done', id: d.id, bytes: result.bytes, meta: result.meta }, [result.bytes.buffer]);
+  } catch (err) {
+    self.postMessage({ type: 'error', id: d.id, message: (err && err.message) ? err.message : String(err) });
+  }
+};
+</script>
+
+<!-- ==================== 主线程逻辑 ==================== -->
+<script type="module">
+const WECHAT_LIMIT = 10 * 1024 * 1024;
+const SAFE_TARGET  = 9.5 * 1024 * 1024;
+const LEVELS = [
+  { maxWidth: 800, colors: 256, frameSkip: 1, desc: '宽 800px · 256 色 · 不跳帧' },
+  { maxWidth: 480, colors: 256, frameSkip: 1, desc: '宽 480px · 256 色 · 不跳帧' },
+  { maxWidth: 480, colors: 128, frameSkip: 1, desc: '宽 480px · 128 色 · 不跳帧' },
+  { maxWidth: 400, colors: 128, frameSkip: 1, desc: '宽 400px · 128 色 · 不跳帧' },
+  { maxWidth: 400, colors: 128, frameSkip: 2, desc: '宽 400px · 128 色 · 每 2 帧取 1' },
+  { maxWidth: 320, colors: 64,  frameSkip: 2, desc: '宽 320px · 64 色 · 每 2 帧取 1' },
+  { maxWidth: 240, colors: 64,  frameSkip: 3, desc: '宽 240px · 64 色 · 每 3 帧取 1（质量底线）' },
+];
+const CDN_LIST = [
+  {
+    gifenc: 'https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js',
+    gifuct: 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm'
+  },
+  {
+    gifenc: 'https://esm.sh/gifenc@1.0.3',
+    gifuct: 'https://esm.sh/gifuct-js@2.1.2'
+  }
+];
+
+// ---------------- DOM ----------------
+const $ = (id) => document.getElementById(id);
+const dropzone = $('dropzone'), fileInput = $('file-input');
+const sections = {
+  info: $('info-section'), params: $('params-section'),
+  progress: $('progress-section'), result: $('result-section')
+};
+
+// ---------------- 状态 ----------------
+let currentFile = null;
+let currentBuffer = null;
+let origURL = null, resultURL = null;
+let worker = null, workerReady = false, workerFailed = false;
+let jobSeq = 0;
+let running = false, cancelled = false;
+let mainLibsPromise = null;
+
+// ---------------- 工具 ----------------
+function formatBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(2) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  $('toast-wrap').appendChild(el);
+  setTimeout(() => el.remove(), 3600);
+}
+class CancelledError extends Error { constructor() { super('已取消'); this.cancelled = true; } }
+
+// ---------------- 引擎加载（主线程） ----------------
+async function loadMainLibs() {
+  if (!mainLibsPromise) {
+    mainLibsPromise = (async () => {
+      let lastErr = null;
+      for (const c of CDN_LIST) {
+        try {
+          const [ge, gu] = await Promise.all([import(c.gifenc), import(c.gifuct)]);
+          return {
+            GIFEncoder: ge.GIFEncoder, quantize: ge.quantize, applyPalette: ge.applyPalette,
+            parseGIF: gu.parseGIF, decompressFrames: gu.decompressFrames
+          };
+        } catch (err) { lastErr = err; }
+      }
+      throw lastErr || new Error('压缩引擎加载失败，请检查网络后刷新页面');
+    })();
+  }
+  return mainLibsPromise;
+}
+
+// ---------------- Worker 管理 ----------------
+function createWorker() {
+  const pipelineText = $('pipeline-source').textContent;
+  const glueText = $('worker-glue').textContent;
+  const blob = new Blob([pipelineText + '\n' + glueText], { type: 'text/javascript' });
+  return new Worker(URL.createObjectURL(blob), { type: 'module' });
+}
+
+function ensureWorker() {
+  if (workerFailed) return Promise.reject(new Error('worker unavailable'));
+  if (worker && workerReady) return Promise.resolve(worker);
+  return new Promise((resolve, reject) => {
+    try {
+      if (!worker) worker = createWorker();
+    } catch (err) { workerFailed = true; return reject(err); }
+    const timer = setTimeout(() => {
+      cleanup(); workerFailed = true;
+      reject(new Error('worker ready timeout'));
+    }, 12000);
+    const onMsg = (e) => {
+      if (e.data.type === 'ready') { cleanup(); workerReady = true; resolve(worker); }
+      else if (e.data.type === 'error' && e.data.id === -1) { cleanup(); workerFailed = true; reject(new Error(e.data.message)); }
+    };
+    const onErr = (err) => { cleanup(); workerFailed = true; reject(err); };
+    const cleanup = () => {
+      clearTimeout(timer);
+      worker.removeEventListener('message', onMsg);
+      worker.removeEventListener('error', onErr);
+    };
+    worker.addEventListener('message', onMsg);
+    worker.addEventListener('error', onErr);
+    worker.postMessage({ type: 'ping' });
+  });
+}
+
+function killWorker() {
+  if (worker) { try { worker.terminate(); } catch (_) {} }
+  worker = null; workerReady = false;
+}
+
+// Worker 内执行单轮压缩
+function runInWorker(buffer, level, onProgress) {
+  return new Promise((resolve, reject) => {
+    const id = ++jobSeq;
+    const w = worker;
+    const onMsg = (e) => {
+      const d = e.data;
+      if (d.id !== id) return;
+      if (d.type === 'progress') onProgress(d.ratio, d.frame, d.total);
+      else if (d.type === 'done') {
+        cleanup();
+        resolve({ bytes: d.bytes, meta: d.meta });
+      } else if (d.type === 'error') { cleanup(); reject(new Error(d.message)); }
+    };
+    const onErr = (err) => { cleanup(); reject(err); };
+    const cleanup = () => {
+      w.removeEventListener('message', onMsg);
+      w.removeEventListener('error', onErr);
+    };
+    w.addEventListener('message', onMsg);
+    w.addEventListener('error', onErr);
+    const copy = buffer.slice(0); // transferable 会 neuter，发送副本
+    w.postMessage({ type: 'compress', id, buffer: copy, level }, [copy]);
+  });
+}
+
+// 主线程兜底执行（分片让出事件循环）
+async function runInMain(buffer, level, onProgress) {
+  const libs = await loadMainLibs();
+  const pipeline = new Function($('pipeline-source').textContent + '\nreturn { compressGIF };')();
+  return pipeline.compressGIF(buffer, level, libs, async (ratio, frame, total) => {
+    if (cancelled) throw new CancelledError();
+    onProgress(ratio, frame, total);
+    await new Promise(r => setTimeout(r, 0));
+  });
+}
+
+// 统一入口：优先 Worker，失败自动降级主线程
+let fallbackNoticed = false;
+async function compressOnce(buffer, level, onProgress) {
+  if (!workerFailed) {
+    try {
+      await ensureWorker();
+      return await runInWorker(buffer, level, onProgress);
+    } catch (err) {
+      if (cancelled || (err && err.cancelled)) throw err;
+      // Worker 不可用（如浏览器不支持 module worker），降级主线程
+      killWorker();
+      workerFailed = true;
+      if (!fallbackNoticed) { fallbackNoticed = true; toast('当前浏览器不支持后台压缩，已切换兼容模式', ''); }
+    }
+  }
+  return runInMain(buffer, level, onProgress);
+}
+
+// ---------------- 上传 ----------------
+dropzone.addEventListener('click', () => { if (!running) fileInput.click(); });
+fileInput.addEventListener('change', () => {
+  if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+  fileInput.value = '';
+});
+['dragenter', 'dragover'].forEach(ev =>
+  dropzone.addEventListener(ev, (e) => { e.preventDefault(); if (!running) dropzone.classList.add('dragover'); }));
+['dragleave', 'drop'].forEach(ev =>
+  dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+dropzone.addEventListener('drop', (e) => {
+  if (running) return;
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+async function handleFile(file) {
+  const isGif = file.type === 'image/gif' || /\.gif$/i.test(file.name);
+  if (!isGif) { toast('请选择 GIF 格式的文件', 'error'); return; }
+  if (file.size > 150 * 1024 * 1024) toast('文件超过 150MB，处理可能较慢且占用较多内存', '');
+
+  resetResult();
+  currentFile = file;
+  currentBuffer = await file.arrayBuffer();
+
+  if (origURL) URL.revokeObjectURL(origURL);
+  origURL = URL.createObjectURL(file);
+  $('orig-preview').src = origURL;
+  $('info-name').textContent = file.name;
+  $('info-size').textContent = formatBytes(file.size) +
+    (file.size <= WECHAT_LIMIT ? '（已 ≤10MB）' : '（超出微信限制）');
+  $('info-dims').textContent = '解析中…';
+  $('info-frames').textContent = '-';
+  $('info-duration').textContent = '-';
+  sections.info.classList.remove('hidden');
+  sections.params.classList.remove('hidden');
+
+  try {
+    const libs = await loadMainLibs();
+    const gif = libs.parseGIF(currentBuffer.slice(0));
+    const W = gif.lsd.width, H = gif.lsd.height;
+    const totalMs = gif.frames.reduce((s, f) => s + ((f.gce && f.gce.delay) ? f.gce.delay * 10 : 100), 0);
+    $('info-dims').textContent = W + ' × ' + H + ' px';
+    $('info-frames').textContent = gif.frames.length + ' 帧';
+    $('info-duration').textContent = (totalMs / 1000).toFixed(1) + ' 秒';
+    const wInput = $('param-width');
+    wInput.value = W;
+    wInput.max = W;
+  } catch (err) {
+    toast('GIF 解析失败：' + err.message, 'error');
+    sections.info.classList.add('hidden');
+    sections.params.classList.add('hidden');
+    currentFile = null; currentBuffer = null;
+  }
+}
+
+// ---------------- 进度 UI ----------------
+function showProgress(text) {
+  sections.progress.classList.remove('hidden');
+  sections.result.classList.add('hidden');
+  setProgress(0, text);
+}
+function setProgress(ratio, text) {
+  const pct = Math.round(ratio * 100);
+  $('progress-fill').style.width = pct + '%';
+  $('progress-pct').textContent = pct + '%';
+  if (text) $('progress-text').textContent = text;
+}
+function hideProgress() { sections.progress.classList.add('hidden'); }
+
+function setRunning(v) {
+  running = v;
+  $('btn-preset').disabled = v;
+  $('btn-compress').disabled = v;
+}
+
+// ---------------- 结果 UI ----------------
+function resetResult() {
+  sections.result.classList.add('hidden');
+  if (resultURL) { URL.revokeObjectURL(resultURL); resultURL = null; }
+}
+
+function renderResult(blob, levelDesc, meta) {
+  const before = currentFile.size, after = blob.size;
+  const ratio = (1 - after / before) * 100;
+
+  $('m-before').textContent = formatBytes(before);
+  const afterEl = $('m-after');
+  afterEl.textContent = formatBytes(after);
+  afterEl.className = 'num after ' + (after < before ? 'smaller' : 'bigger');
+
+  const badges = [];
+  if (after >= before) {
+    badges.push('<span class="badge danger">体积未降低（+' + (-ratio).toFixed(1) + '%）</span>');
+  } else {
+    badges.push('<span class="badge info">压缩率 ' + ratio.toFixed(1) + '%</span>');
+  }
+  if (after <= WECHAT_LIMIT) {
+    badges.push('<span class="badge ok">✓ 符合微信要求 ≤10MB</span>');
+  } else {
+    badges.push('<span class="badge warn">仍超过 10MB，已达最低质量底线</span>');
+  }
+  $('badges').innerHTML = badges.join('');
+
+  let desc = '压缩参数：' + levelDesc;
+  if (meta) desc += ' → 输出 ' + meta.width + '×' + meta.height + ' · ' + meta.frames + ' 帧';
+  if (after > WECHAT_LIMIT) desc += '（原图信息量过大，建议裁剪内容或缩短时长后再试）';
+  $('level-desc').textContent = desc;
+
+  $('pv-before').src = origURL;
+  if (resultURL) URL.revokeObjectURL(resultURL);
+  resultURL = URL.createObjectURL(blob);
+  $('pv-after').src = resultURL;
+
+  const base = currentFile.name.replace(/\.gif$/i, '');
+  const dl = $('btn-download');
+  dl.href = resultURL;
+  dl.setAttribute('download', base + '_compressed.gif');
+  dl.textContent = '⬇ 下载压缩后的 GIF（' + formatBytes(after) + '）';
+
+  sections.result.classList.remove('hidden');
+  sections.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------------- 压缩流程 ----------------
+async function runCompressFlow(levels, isPreset) {
+  if (!currentFile || !currentBuffer) { toast('请先上传 GIF 文件', 'error'); return; }
+  setRunning(true);
+  cancelled = false;
+  showProgress('正在加载压缩引擎…');
+
+  try {
+    if (isPreset && currentFile.size <= WECHAT_LIMIT) {
+      toast('原文件已符合微信限制，仍为你输出一份优化版本', 'success');
+    }
+    let best = null;
+    for (let li = 0; li < levels.length; li++) {
+      const level = levels[li];
+      const stagePrefix = isPreset ? ('第 ' + (li + 1) + '/' + levels.length + ' 档 · ' + level.desc) : level.desc;
+      const { bytes, meta } = await compressOnce(currentBuffer, level, (ratio, frame, total) => {
+        setProgress(ratio, stagePrefix + ' · 处理第 ' + frame + '/' + total + ' 帧');
+      });
+      const blob = new Blob([bytes], { type: 'image/gif' });
+      if (!best || blob.size < best.blob.size) best = { blob, level, meta };
+      if (!isPreset || blob.size <= SAFE_TARGET) break;
+      setProgress(1, stagePrefix + ' · 结果 ' + formatBytes(blob.size) + '，仍超标，自动加大力度…');
+    }
+    hideProgress();
+    renderResult(best.blob, best.level.desc, best.meta);
+    if (best.blob.size <= WECHAT_LIMIT) toast('压缩完成，已符合微信上传要求', 'success');
+  } catch (err) {
+    hideProgress();
+    if (err && (err.cancelled || cancelled)) toast('已取消压缩', '');
+    else toast('压缩失败：' + err.message, 'error');
+  } finally {
+    setRunning(false);
+  }
+}
+
+$('btn-preset').addEventListener('click', () => runCompressFlow(LEVELS, true));
+$('btn-compress').addEventListener('click', () => {
+  const w = parseInt($('param-width').value, 10);
+  const colors = parseInt($('param-colors').value, 10);
+  const skip = parseInt($('param-skip').value, 10);
+  if (!w || w < 120) { toast('目标宽度不能小于 120px', 'error'); return; }
+  const desc = '宽 ' + w + 'px · ' + colors + ' 色 · ' + (skip === 1 ? '不跳帧' : ('每 ' + skip + ' 帧取 1'));
+  runCompressFlow([{ maxWidth: w, colors, frameSkip: skip, desc }], false);
+});
+$('btn-cancel').addEventListener('click', () => {
+  cancelled = true;
+  killWorker(); // 终止 worker 即取消当前任务；下次压缩会自动重建
+});
+</script>
+</body>
+</html>
